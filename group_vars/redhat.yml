@@ -1,0 +1,15 @@
+# ============================================================
+# Ubuntu /  RedHat linux variables
+# ============================================================
+
+# Package manager: dnf (RHEL 8+, Rocky, Alma) or yum (RHEL 7, CentOS 7)
+# Set explicitly to override auto-detection
+redhat_pkg_manager: dnf
+
+# Whether to update all packages or just security
+# all -> dnf update / yum update
+# security -> dnf update --security / yum update --security
+redhat_update_type: all
+
+# Install yum-utils for needs-restarting check
+install_yum_utils: true

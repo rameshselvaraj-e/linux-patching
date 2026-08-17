@@ -1,0 +1,174 @@
+---
+# ============================================================
+# PATCH LINUX PLAYBOOK
+# Applies security and package updates to Ubuntu and RedHat.
+# Handles both OS families with conditional tasks.
+# Optionally reboots if required.
+# ============================================================
+
+- name: "PATCH | Apply system updates"
+  hosts: "{{ target_group | default('all') }}"
+  become: true
+  serial: "{{ serial_batch | default(1) }}"
+  gather_facts: true
+
+  tasks:
+
+    # ==========================================================
+    # UBUNTU / DEBIAN PATCHING
+    # ==========================================================
+    - name: "UBUNTU | Hold specified packages from upgrade"
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop: "{{ ubuntu_hold_packages | default([]) }}"
+      when: ansible_os_family == "Debian"
+
+    - name: "UBUNTU | Update apt cache"
+      apt:
+        update_cache: true
+        cache_valid_time: "{{ apt_cache_valid_time | default(3600) }}"
+      when: ansible_os_family == "Debian"
+
+    - name: "UBUNTU | Upgrade all packages (safe upgrade)"
+      apt:
+        name: "*"
+        state: latest
+        autoremove: "{{ ubuntu_autoremove | default(true) }}"
+      when:
+        - ansible_os_family == "Debian"
+        - not ubuntu_dist_upgrade | default(false) | bool
+      register: ubuntu_upgrade_result
+
+    - name: "UBUNTU | Dist upgrade (full release upgrade)"
+      apt:
+        upgrade: dist
+        autoremove: "{{ ubuntu_autoremove | default(true) }}"
+      when:
+        - ansible_os_family == "Debian"
+        - ubuntu_dist_upgrade | default(false) | bool
+      register: ubuntu_dist_upgrade_result
+
+    - name: "UBUNTU | Check if reboot is required"
+      stat:
+        path: /var/run/reboot-required
+      register: ubuntu_reboot_file
+      when: ansible_os_family == "Debian"
+
+    - name: "UBUNTU | Display reboot status"
+      debug:
+        msg: "Reboot required: {{ ubuntu_reboot_file.stat.exists | default(false) }}"
+      when: ansible_os_family == "Debian"
+
+    # ==========================================================
+    # REDHAT / CENTOS / ROCKY / ALMA PATCHING
+    # ==========================================================
+    - name: "REDHAT | Install yum-utils for needs-restarting"
+      package:
+        name: yum-utils
+        state: present
+      when:
+        - ansible_os_family == "RedHat"
+        - install_yum_utils | default(true) | bool
+
+    - name: "REDHAT | Determine package manager (dnf vs yum)"
+      set_fact:
+        rh_pkg_mgr: >-
+          {{ 'dnf' if ansible_distribution_major_version | int >= 8 else 'yum' }}
+      when: ansible_os_family == "RedHat"
+
+    - name: "REDHAT | Clean package cache"
+      command: "{{ rh_pkg_mgr }} clean all"
+      when: ansible_os_family == "RedHat"
+      changed_when: false
+
+    - name: "REDHAT | Apply all updates"
+      command: "{{ rh_pkg_mgr }} update -y --exclude={{ redhat_exclude_packages | join(',') }}"
+      when:
+        - ansible_os_family == "RedHat"
+        - redhat_update_type | default('all') == 'all'
+      register: redhat_update_result
+
+    - name: "REDHAT | Apply security updates only"
+      command: "{{ rh_pkg_mgr }} update --security -y"
+      when:
+        - ansible_os_family == "RedHat"
+        - redhat_update_type | default('all') == 'security'
+      register: redhat_security_result
+
+    - name: "REDHAT | Check if reboot is required (RHEL 8+)"
+      command: "needs-restarting -r"
+      register: redhat_reboot_check
+      failed_when: false
+      changed_when: false
+      when:
+        - ansible_os_family == "RedHat"
+        - ansible_distribution_major_version | int >= 8
+
+    - name: "REDHAT | Check if reboot is required (RHEL 7)"
+      command: "needs-restarting"
+      register: redhat7_reboot_check
+      failed_when: false
+      changed_when: false
+      when:
+        - ansible_os_family == "RedHat"
+        - ansible_distribution_major_version | int < 8
+
+    - name: "REDHAT | Set reboot required flag"
+      set_fact:
+        redhat_reboot_required: >-
+          {{ true if (redhat_reboot_check.rc | default(redhat7_reboot_check.rc | default(0))) == 1 else false }}
+      when: ansible_os_family == "RedHat"
+
+    - name: "REDHAT | Display reboot status"
+      debug:
+        msg: "Reboot required: {{ redhat_reboot_required | default(false) }}"
+      when: ansible_os_family == "RedHat"
+
+    # ==========================================================
+    # REBOOT (if required and enabled)
+    # ==========================================================
+    - name: "REBOOT | Determine if reboot is needed"
+      set_fact:
+        reboot_required: >-
+          {{ (ubuntu_reboot_file.stat.exists | default(false)) if ansible_os_family == 'Debian'
+             else (redhat_reboot_required | default(false)) }}
+
+    - name: "REBOOT | Reboot host if required and auto_reboot is enabled"
+      reboot:
+        reboot_timeout: 600
+        test_command: "uptime"
+        msg: "Rebooting after patching via Ansible"
+      when:
+        - reboot_required | bool
+        - auto_reboot | default(false) | bool
+      register: reboot_result
+
+    - name: "REBOOT | Skip reboot (auto_reboot disabled)"
+      debug:
+        msg: >
+          WARNING: Reboot is required on {{ ansible_hostname }} but auto_reboot is disabled.
+          Please reboot manually at a scheduled maintenance window.
+      when:
+        - reboot_required | bool
+        - not auto_reboot | default(false) | bool
+
+    - name: "REBOOT | No reboot needed"
+      debug:
+        msg: "No reboot required for {{ ansible_hostname }}."
+      when: not (reboot_required | bool)
+
+    # ==========================================================
+    # GATHER POST-REBOOT FACTS
+    # ==========================================================
+    - name: "POST | Re-gather facts after patching"
+      setup:
+      when: reboot_result is changed
+
+    - name: "PATCH | Patching completed"
+      debug:
+        msg:
+          - "Patching completed for {{ ansible_hostname }}"
+          - "Reboot performed: {{ reboot_result is changed }}"
+          - "Reboot was required: {{ reboot_required | bool }}"
+

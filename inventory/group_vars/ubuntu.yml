@@ -1,0 +1,15 @@
+# ============================================================
+# Ubuntu-specific variables
+# ============================================================
+
+# Package manager update cache timeout (seconds)
+apt_cache_valid_time: 3600
+
+# Whether to run autoremove after upgrade
+ubuntu_autoremove: true
+
+# Whether to run dist-upgrade (full release upgrade) vs just upgrade
+# dist_upgrade: true  -> apt dist-upgrade
+# dist_upgrade: false -> apt upgrade (safer, default)
+ubuntu_dist_upgrade: false
+

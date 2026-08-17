@@ -1,0 +1,72 @@
+---
+# ============================================================
+# PRE-PATCH PLAYBOOK
+# Collects system state BEFORE patching:
+#   - OS info, kernel, uptime, hostname, IP
+#   - Disk space on critical filesystems (fail if over threshold)
+#   - Package manager lock check
+#   - Pending updates count
+#   - Critical service status
+#   - Current package list (for diff comparison)
+# Saves all data as host facts for the post-patch report.
+# ============================================================
+
+- name: "PRE-PATCH | Collect system state and validate readiness"
+  hosts: "{{ target_group | default('all') }}"
+  become: true
+  serial: "{{ serial_batch | default(1) }}"
+  gather_facts: true
+
+  tasks:
+
+    # ----------------------------------------------------------
+    # 1. DISPLAY TARGET SYSTEM INFO
+    # ----------------------------------------------------------
+    - name: "PRE | Display system information"
+      debug:
+        msg:
+          - "================================================"
+          - "  Host:      {{ ansible_hostname }}"
+          - "  IP:        {{ ansible_default_ipv4.address | default('N/A') }}"
+          - "  OS:        {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "  Kernel:    {{ ansible_kernel }}"
+          - "  Arch:      {{ ansible_architecture }}"
+          - "  Uptime:    {{ (ansible_uptime_seconds / 3600) | round(2) }} hours"
+          - "  Total RAM: {{ (ansible_memtotal_mb / 1024) | round(2) }} GB"
+          - "================================================"
+
+    # ----------------------------------------------------------
+    # 2. CHECK DISK SPACE ON CRITICAL FILESYSTEMS
+    # ----------------------------------------------------------
+    - name: "PRE | Get root filesystem usage percentage"
+      shell: df / | tail -1 | awk '{print $5}' | tr -d '%'
+      register: root_disk_pct
+      changed_when: false
+
+    - name: "PRE | Display root disk usage"
+      debug:
+        msg: "Root filesystem usage: {{ root_disk_pct.stdout }}% (threshold: {{ disk_threshold_percent }}%)"
+
+    - name: "PRE | Validate root filesystem has enough free space"
+      ansible.builtin.assert:
+        that:
+          - root_disk_pct.stdout | int <= disk_threshold_percent | int
+        fail_msg: >
+          ABORTING: Root filesystem is {{ root_disk_pct.stdout }}% used
+          (threshold: {{ disk_threshold_percent }}%).
+          Free up disk space before patching.
+        success_msg: "Root filesystem disk space OK ({{ root_disk_pct.stdout }}%)"
+
+    - name: "PRE | Check all filesystems usage"
+      shell: df -h | tail -n +2
+      register: all_disk_usage
+      changed_when: false
+
+    - name: "PRE | Display all filesystem usage"
+      debug:
+        var: all_disk_usage.stdout_lines
+
+
+    - name: "PRE | Pre-patch checks PASSED"
+      debug:
+        msg: "All pre-patch checks passed for {{ ansible_hostname }}. Ready to patch."

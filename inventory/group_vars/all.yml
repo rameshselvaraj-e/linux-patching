@@ -1,0 +1,31 @@
+# ============================================================
+# Global variables for all hosts
+# ============================================================
+
+# Disk space thresholds (percentage used). Patching will be
+# ABORTED if any critical filesystem exceeds this before patching.
+disk_threshold_percent: 85
+
+critical_services:
+  - sshd
+
+# Report output directory (relative to playbook execution)
+report_dir: "{{ playbook_dir }}/../reports"
+
+# Whether to automatically reboot after patching
+# if a reboot is required. Set to false in prod for
+# manual control.
+#auto_reboot: false
+
+# Number of hosts to patch in parallel per batch
+#serial_batch: 1
+
+# Report output directory (relative to playbook execution)
+report_dir: "{{ playbook_dir }}/../reports"
+
+# Packages to hold/exclude from upgrade (empty = upgrade all)
+# Example for Ubuntu:   ubuntu_hold_packages: []
+# Example for RedHat:   redhat_exclude_packages: []
+#ubuntu_hold_packages: []
+#redhat_exclude_packages:
+#  - kernel*
