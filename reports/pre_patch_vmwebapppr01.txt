@@ -1,0 +1,19 @@
+============================================
+PRE-PATCH REPORT
+============================================
+Host:           vmwebapppr01
+IP:             {'gateway': '10.0.10.100', 'interface': 'ens18', 'address': '10.0.10.20', 'broadcast': '10.0.10.255', 'netmask': '255.255.255.0', 'network': '10.0.10.0', 'prefix': '24', 'macaddress': 'bc:24:11:25:cb:56', 'mtu': 1500, 'type': 'ether', 'alias': 'ens18'}
+OS:             Ubuntu 24.04
+Kernel (pre):  6.8.0-138-generic
+Uptime (hrs):  2.19
+Packages:      496
+Pending updates: 0
+Disk usage:
+/dev/mapper/ubuntuvg0-lv--root  9.8G  4.2G  5.1G  46% /
+/dev/mapper/datavg-datalv        20G  819M   20G   5% /data
+/dev/mapper/ubuntuvg0-lv--var   4.9G  1.3G  3.4G  28% /var
+/dev/mapper/ubuntuvg0-lv--opt   4.9G   24K  4.6G   1% /opt
+/dev/mapper/ubuntuvg0-lv--home  4.9G  268K  4.6G   1% /home
+/dev/mapper/ubuntuvg0-lv--tmp   4.9G  176K  4.6G   1% /tmp
+/dev/sda2                       2.0G  199M  1.6G  11% /boot
+============================================

@@ -17,9 +17,9 @@
     # ==========================================================
     # UBUNTU / DEBIAN PATCHING
     # ==========================================================
-    - name: "UBUNTU | Update apt cache"
+    - name: "UBUNTU | Update apt repo and cache"
       apt:
-        update_cache: true
+        update_cache: yes
         cache_valid_time: "{{ apt_cache_valid_time | default(3600) }}"
       when: ansible_facts['os_family'] == "Debian"
 
@@ -30,12 +30,12 @@
         autoremove: "{{ ubuntu_autoremove | default(true) }}"
       when:
         - ansible_facts['os_family'] == "Debian"
-        - not ubuntu_dist_upgrade | default(false) | bool
       register: ubuntu_upgrade_result
 
     - name: "UBUNTU | Check if reboot is required"
       stat:
         path: /var/run/reboot-required
+        get_checksum: no
       register: ubuntu_reboot_file
       when: ansible_facts['os_family'] == "Debian"
 
@@ -88,7 +88,6 @@
         msg: "Rebooting after patching via Ansible"
       when:
         - reboot_required | bool
-        - auto_reboot | default(false) | bool
       register: reboot_result
 
     - name: "REBOOT | Skip reboot (auto_reboot disabled)"
