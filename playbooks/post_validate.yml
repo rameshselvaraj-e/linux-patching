@@ -21,7 +21,7 @@
     disk_threshold_percent: 85
     critical_services:
       - ssh
-    report_dir: /data/linux-patching/reports
+    report_dir: "/data/linux-patching/reports/report_{{ ansible_facts['date_time']['date'] }}"
 
 
   tasks:
@@ -192,23 +192,9 @@
         dest: "{{ report_dir }}/post_patch_{{ ansible_facts['hostname'] }}.txt"
       delegate_to: localhost
       become: false
-
-# ----------------------------------------------------------
-    # 8. PACKAGE DIFF (pre vs post)
     # ----------------------------------------------------------
-
-
-    - name: "POST | Display package diff summary"
-      shell: "wc -l < {{ report_dir }}/package_diff_{{ ansible_facts['hostname'] }}.txt"
-      register: diff_line_count
-      delegate_to: localhost
-      become: false
-      changed_when: false
-
-    - name: "POST | Show diff summary"
-      debug:
-        msg: "Package changes detected: {{ diff_line_count.stdout | trim }} lines in diff for {{ ansible_facts['hostname'] }}"
-
+    # 8. Validation REPORT
+    # ----------------------------------------------------------
     - name: "POST | Validation completed"
       debug:
         msg:

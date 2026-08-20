@@ -17,13 +17,20 @@
   serial: "{{ serial_batch | default(1) }}"
   gather_facts: true
 
+
   vars:
     disk_threshold_percent: 85
     critical_services:
       - sshd
-    report_dir: /data/linux-patching/reports
+    report_path: /data/linux-patching/reports
+    report_dir: "/data/linux-patching/reports/report_{{ ansible_facts['date_time']['date'] }}"
 
   tasks:
+    - name: Create a directory with the current system date
+      file:
+        path: "{{ report_path }}/report_{{ ansible_facts['date_time']['date'] }}"
+        state: directory
+        mode: '0755'
 
     # ----------------------------------------------------------
     # 1. DISPLAY TARGET SYSTEM INFO
