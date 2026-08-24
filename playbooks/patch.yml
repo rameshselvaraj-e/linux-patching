@@ -11,12 +11,23 @@
   become: true
   serial: "{{ serial_batch | default(1) }}"
   gather_facts: true
+  
+  pre_tasks:
+    # =========================================================
+    # DIsplay Server Information
+    # =========================================================
+    ansible.builtin.debug:
+      msg:
+        - "Hostname: {{ ansible_hostname }}"
+        - "OS: {{ ansible_distribution }}"
+        - "Version: {{ ansible_distribution_version }}"
+        - "KERNEL: {{ ansible_kernel }}"
 
   tasks:
-
     # ==========================================================
     # UBUNTU / DEBIAN PATCHING
     # ==========================================================
+
     - name: "UBUNTU | Update apt repo and cache"
       apt:
         update_cache: yes

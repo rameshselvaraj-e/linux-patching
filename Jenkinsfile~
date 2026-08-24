@@ -7,7 +7,7 @@ pipeline {
         PLAYBOOK_PATH = '/data/ansible/playbooks/test.yml'
         INVENTORY_PATH = '/data/ansible/inventory/hosts'
     }
-
+  
   stages {
     stage('Hello') {
       steps {
@@ -30,10 +30,10 @@ pipeline {
         git branch: 'main', url: 'https://github.com/rameshselvaraj-e/jenkinspipeline.git'
       }
     }
-
+      
     stage('Copy Playbook to Ansible Server') {
       steps {
-        sshagent(credentials: ['esrjenkins-esrittool-ansible-ssh']) {
+        sshagent(credentials: ['ansible-server-ssh']) {
           sh """
           scp -o StrictHostKeyChecking=no -r ./playbooks/* ${ANSIBLE_USER}@${ANSIBLE_HOST}:/data/ansible/playbooks/
           """
