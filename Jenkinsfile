@@ -4,8 +4,8 @@ pipeline {
   environment {
         ANSIBLE_HOST = '10.0.10.10'
         ANSIBLE_USER = 'itadmin'
-        PLAYBOOK_PATH = '/data/ansible/playbooks/test.yml'
-        INVENTORY_PATH = '/data/ansible/inventory/hosts'
+        PLAYBOOK_PATH = '/data/linux-patching/playbooks/patch_new.yml'
+        INVENTORY_PATH = '/data/linux-patching/inventory/hosts.ini'
     }
 
   stages {
