@@ -27,7 +27,7 @@ pipeline {
 
     stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/rameshselvaraj-e/jenkinspipeline.git'
+        git branch: 'main', ssh: 'git@github.com:rameshselvaraj-e/linux-patching.git'
       }
     }
 
@@ -35,7 +35,7 @@ pipeline {
       steps {
         sshagent(credentials: ['esrjenkins-esrittool-ansible-ssh']) {
           sh """
-          scp -o StrictHostKeyChecking=no -r ./playbooks/* ${ANSIBLE_USER}@${ANSIBLE_HOST}:/data/ansible/playbooks/
+          scp -o StrictHostKeyChecking=no -r ./playbooks/* ${ANSIBLE_USER}@${ANSIBLE_HOST}:/data/linux-patching/playbooks/
           """
         }
       }
