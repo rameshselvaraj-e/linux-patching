@@ -27,7 +27,7 @@ pipeline {
 
     stage('Checkout') {
       steps {
-        git branch: 'main', ssh: 'git@github.com:rameshselvaraj-e/linux-patching.git'
+        git branch: 'main', url: 'https://github.com/rameshselvaraj-e/linux-patching.git'
       }
     }
 
